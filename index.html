@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Agenda personal: tareas, notas, horario semanal de clases y calendario">
+  <meta name="theme-color" content="#f3e7dc">
+
+  <!-- Content Security Policy más permisiva para fuentes e imágenes -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' 'unsafe-inline' data: blob:;
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com data:;
+    img-src 'self' data: blob: https:;
+    connect-src 'self' https://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com;
+    manifest-src 'self';
+  ">
+
+  <title>Mi Agenda</title>
+
+  <script>
+    // Aplicar tema, color de acento y modo app antes de pintar para evitar parpadeos
+    (function () {
+      var guardado = localStorage.getItem('theme');
+      var tema = guardado === 'light' || guardado === 'dark' ? guardado :
+        (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      var raiz = document.documentElement;
+      raiz.setAttribute('data-theme', tema);
+      var acento = localStorage.getItem('acentoApp');
+      if (acento && /^#[0-9a-f]{6}$/i.test(acento)) {
+        raiz.style.setProperty('--accent', acento);
+        raiz.style.setProperty('--accent-hover', 'color-mix(in srgb, ' + acento + ' 82%, black)');
+        raiz.style.setProperty('--accent-light', 'color-mix(in srgb, ' + acento + ' 14%, transparent)');
+      }
+      var tab = localStorage.getItem('activeTab');
+      if (tab) raiz.dataset.tab = tab;
+      var esApp = /[?&]app=1/.test(location.search) ||
+        (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+      if (esApp) raiz.classList.add('app-mode');
+    })();
+  </script>
+
+  <link rel="stylesheet" href="css/base.css?v=17">
+  <link rel="stylesheet" href="css/tareas.css?v=17">
+  <link rel="stylesheet" href="css/notas.css?v=17">
+  <link rel="stylesheet" href="css/horario.css?v=17">
+  <link rel="stylesheet" href="css/calendario.css?v=17">
+  <link rel="stylesheet" href="css/ventanas.css?v=17">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+  <a href="#contenidoPrincipal" class="saltar-contenido">Saltar al contenido</a>
+
+  <!-- Canvas para el efecto de confeti -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-container">
+    <!-- Panel Lateral -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h1><span class="brand-mark" aria-hidden="true">✦</span> Mi Agenda</h1>
+        <div class="brand-actions">
+          <button type="button" id="btnSync" class="icon-btn btn-sync hidden" aria-label="Sincronización">☁️</button>
+          <button type="button" id="btnPaleta" class="icon-btn" aria-label="Buscar en toda la agenda (Ctrl+K)" title="Buscar y comandos (Ctrl+K)">🔍</button>
+          <button type="button" id="btnAjustes" class="icon-btn" aria-label="Ajustes" title="Ajustes">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Saludo, fecha y resumen del día -->
+      <div class="date-widget">
+        <span id="txtGreeting" class="greeting">¡Hola!</span>
+        <span id="txtDate" class="today-date"></span>
+        <div id="txtResumenDia" class="resumen-dia" aria-live="polite"></div>
+        <button type="button" id="nextClassChip" class="next-class-chip hidden" title="Ver horario"></button>
+      </div>
+
+      <!-- Navegación de pestañas (abajo en móvil) -->
+      <nav class="app-nav" aria-label="Navegación principal" role="tablist">
+        <button type="button" id="tabTareas" class="nav-tab active" role="tab" aria-controls="tareasMainContainer">
+          <span class="nav-icon" aria-hidden="true">✅</span><span>Tareas</span>
+        </button>
+        <button type="button" id="tabNotas" class="nav-tab" role="tab" aria-controls="notesMainContainer">
+          <span class="nav-icon" aria-hidden="true">📝</span><span>Notas</span>
+        </button>
+        <button type="button" id="tabHorario" class="nav-tab" role="tab" aria-controls="horarioMainContainer">
+          <span class="nav-icon" aria-hidden="true">🗓️</span><span>Horario</span>
+        </button>
+        <button type="button" id="tabCalendario" class="nav-tab" role="tab" aria-controls="calendarioMainContainer">
+          <span class="nav-icon" aria-hidden="true">📅</span><span>Calendario</span>
+        </button>
+      </nav>
+
+      <!-- Tarjeta del día: progreso, racha y semana -->
+      <div class="progress-widget hoy-card" id="tareasProgressWidget">
+        <div class="hoy-card-top">
+          <div class="hoy-card-textos">
+            <h3 id="progressTitle">Hoy</h3>
+            <p id="progressSummary"></p>
+          </div>
+          <span id="rachaInfo" class="racha-badge"></span>
+        </div>
+        <div class="hoy-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progressBarra">
+          <span id="progressBar"></span>
+        </div>
+        <div id="actividadSemana" class="semana-puntos" aria-label="Tareas completadas esta semana"></div>
+      </div>
+
+      <!-- Listas inteligentes y categorías -->
+      <nav class="categories-filter" id="tareasCategoriesFilter" aria-label="Filtrar tareas">
+        <div id="vistasTareas" class="listas-inteligentes"></div>
+        <div id="vistasExtra" class="vistas-extra"></div>
+        <div class="filtro-bloque">
+          <div class="categories-header">
+            <h3 class="sidebar-heading">Categorías</h3>
+            <button type="button" id="btnManageCategories" class="btn-manage-cat" title="Gestionar categorías" aria-label="Gestionar categorías">✏️</button>
+          </div>
+          <div id="categoriasListContainer" class="categories-list-container"></div>
+        </div>
+      </nav>
+
+      <!-- Lista de notas -->
+      <div id="notesSidebarContainer" class="notes-sidebar-container hidden">
+        <div class="notes-sidebar-header">
+          <h3>Mis Notas <span id="notasContador" class="mini-count"></span></h3>
+          <button type="button" id="btnNewNote" class="btn-new-note" title="Crear nueva nota (N)" aria-label="Crear nueva nota">＋ Nueva</button>
+        </div>
+        <div class="notes-search-wrapper">
+          <span class="notes-search-icon" aria-hidden="true">🔍</span>
+          <input type="search" id="buscarNota" placeholder="Buscar nota..." aria-label="Buscar nota por texto">
+        </div>
+        <div id="notasFiltroAsignaturas" class="notas-filtros hidden" role="group" aria-label="Filtrar notas por asignatura"></div>
+        <div id="notesListContainer" class="notes-list-container"></div>
+      </div>
+
+      <!-- Horario: clases de hoy y asignaturas -->
+      <div id="horarioSidebarContainer" class="horario-sidebar hidden">
+        <section class="sidebar-section">
+          <h3 class="sidebar-heading" id="clasesHoyTitulo">Clases de hoy</h3>
+          <div id="clasesHoyList" class="clases-hoy-list"></div>
+        </section>
+        <section class="sidebar-section">
+          <h3 class="sidebar-heading">Asignaturas</h3>
+          <div id="asignaturasList" class="asignaturas-list"></div>
+        </section>
+      </div>
+
+      <!-- Calendario: próximos exámenes, eventos y tareas sin fecha -->
+      <div id="calendarioSidebarContainer" class="horario-sidebar hidden">
+        <section class="sidebar-section">
+          <h3 class="sidebar-heading">📝 Próximos exámenes</h3>
+          <div id="calExamenes" class="cal-lateral-lista"></div>
+        </section>
+        <section class="sidebar-section">
+          <h3 class="sidebar-heading">📌 Próximos eventos</h3>
+          <div id="calEventos" class="cal-lateral-lista"></div>
+        </section>
+        <section class="sidebar-section hidden" id="calSinFechaSeccion">
+          <h3 class="sidebar-heading">🗂️ Tareas sin fecha</h3>
+          <p class="cal-lateral-ayuda">Arrástralas a un día del calendario o púlsalas para ponerlas en el día seleccionado.</p>
+          <div id="calSinFecha" class="cal-lateral-lista"></div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Panel Principal -->
+    <main class="main-panel" id="contenidoPrincipal" tabindex="-1">
+      <!-- ============ TAREAS ============ -->
+      <div id="tareasMainContainer" class="main-content-tab" role="tabpanel" aria-labelledby="tabTareas">
+        <header class="section-header tareas-header">
+          <div>
+            <h2 id="tareasTitulo" class="section-title">Tareas</h2>
+            <p id="tareasSubtitulo" class="section-subtitle"></p>
+          </div>
+          <section class="search-sort-bar" aria-label="Buscar y ordenar tareas">
+            <div class="search-wrapper">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input type="search" id="buscarTarea" placeholder="Buscar tarea…  ( / )" aria-label="Buscar tarea por texto">
+            </div>
+            <label for="criterioOrden" class="sr-only">Agrupar y ordenar por</label>
+            <select id="criterioOrden" title="Agrupar y ordenar por">
+              <option value="fecha">📅 Por fecha</option>
+              <option value="prioridad">⚑ Por prioridad</option>
+              <option value="matriz">🧭 Matriz</option>
+            </select>
+            <button type="button" id="direccionOrden" class="btn-icon" aria-label="Dirección del ordenamiento">↑</button>
+          </section>
+        </header>
+
+        <!-- Entrada rápida -->
+        <section class="input-panel" aria-label="Agregar nueva tarea">
+          <div class="quick-add">
+            <span class="quick-add-plus" aria-hidden="true">＋</span>
+            <label for="nuevaTarea" class="sr-only">Nueva tarea</label>
+            <input type="text" id="nuevaTarea" placeholder="Añade una tarea…  prueba «Entregar informe el viernes a las 10 !alta»" autocomplete="off" enterkeyhint="done">
+            <button type="button" id="btnAyudaRapida" class="btn-ayuda" aria-expanded="false" aria-controls="ayudaRapida" title="Cómo escribir tareas rápido">?</button>
+            <button type="button" id="agregarTarea" class="btn-add">Agregar</button>
+          </div>
+          <div id="quickChips" class="quick-chips" aria-live="polite"></div>
+
+          <div id="ayudaRapida" class="ayuda-rapida hidden">
+            <p>Escribe con naturalidad y la agenda detecta los detalles. Pulsa un ejemplo para probarlo:</p>
+            <ul>
+              <li><button type="button" data-ejemplo="Llamar al dentista mañana a las 17:30">📅 <b>hoy</b>, <b>mañana</b>, <b>el viernes</b>, <b>el 25</b>, <b>12/10</b>, <b>en 3 días</b></button></li>
+              <li><button type="button" data-ejemplo="Examen de historia el 20 de noviembre !alta">⚑ Prioridad: <b>!alta</b>, <b>!media</b>, <b>!baja</b> (o <b>!!!</b>, <b>!!</b>, <b>!</b>)</button></li>
+              <li><button type="button" data-ejemplo="Hacer la compra el sábado #compras">🏷️ Categoría: <b>#nombre</b> (basta con el principio)</button></li>
+              <li><button type="button" data-ejemplo="Regar las plantas cada lunes">🔁 Repetir: <b>cada día</b>, <b>cada lunes</b>, <b>entre semana</b>, <b>cada mes</b></button></li>
+            </ul>
+          </div>
+
+          <div class="input-row-bottom">
+            <label class="campo-mini" title="Fecha límite">
+              <span aria-hidden="true">📅</span>
+              <span class="sr-only">Fecha límite</span>
+              <input type="date" id="fechaTarea">
+            </label>
+          </div>
+        </section>
+
+        <!-- Sugerencias para planificar el día (vista Hoy) -->
+        <section id="sugerenciasHoy" class="sugerencias hidden" aria-label="Sugerencias para hoy"></section>
+
+        <!-- Lista agrupada -->
+        <section aria-label="Lista de tareas">
+          <ul id="listaTareas" class="todo-list"></ul>
+        </section>
+      </div>
+
+      <!-- ============ NOTAS ============ -->
+      <div id="notesMainContainer" class="main-content-tab hidden" role="tabpanel" aria-labelledby="tabNotas">
+        <div id="notesEmpty" class="notes-empty hidden">
+          <span aria-hidden="true">🗒️</span>
+          <h2>No tienes notas</h2>
+          <p>Apuntes, ideas, listas… todo se guarda solo.</p>
+          <button type="button" id="btnNewNoteEmpty" class="btn-add">＋ Crear una nota</button>
+        </div>
+
+        <div class="notes-editor-container">
+          <div class="notes-editor-header">
+            <input type="text" id="noteTitleInput" class="note-title-input" placeholder="Sin título" aria-label="Título de la nota">
+
+            <div class="notes-controls-row">
+              <span id="noteDateBadge" class="note-date-badge">Sin guardar</span>
+              <label class="note-asignatura" title="Asignatura de la nota">
+                <span aria-hidden="true">📚</span>
+                <select id="noteAsignatura" aria-label="Asignatura de la nota"></select>
+              </label>
+              <div class="notes-actions">
+                <button type="button" id="btnModoNota" class="btn-note-control btn-modo" aria-pressed="false">👁️ <span>Vista</span></button>
+                <button type="button" id="btnPinNote" class="btn-note-control btn-solo-icono" title="Fijar arriba" aria-label="Fijar nota">📌</button>
+                <button type="button" id="btnNoteToTask" class="btn-note-control" title="Crear tarea con la línea o el texto seleccionado">✅ <span>A tarea</span></button>
+                <button type="button" id="btnCopyNote" class="btn-note-control btn-solo-icono" title="Copiar nota" aria-label="Copiar nota">📋</button>
+                <button type="button" id="btnDownloadNote" class="btn-note-control btn-solo-icono" title="Exportar como TXT" aria-label="Exportar nota">📥</button>
+                <button type="button" id="btnDeleteNote" class="btn-note-control btn-danger btn-solo-icono" title="Eliminar nota" aria-label="Eliminar nota">🗑️</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="noteToolbar" class="note-toolbar" role="toolbar" aria-label="Formato">
+            <button type="button" data-md="negrita" title="Negrita (Ctrl+B)"><b>B</b></button>
+            <button type="button" data-md="cursiva" title="Cursiva (Ctrl+I)"><i>I</i></button>
+            <button type="button" data-md="tachado" title="Tachado"><s>S</s></button>
+            <button type="button" data-md="resaltado" title="Resaltar"><mark>A</mark></button>
+            <span class="toolbar-sep" aria-hidden="true"></span>
+            <button type="button" data-md="titulo" title="Título">H</button>
+            <button type="button" data-md="lista" title="Lista">•≡</button>
+            <button type="button" data-md="numerada" title="Lista numerada">1.</button>
+            <button type="button" data-md="check" title="Lista de comprobación">☑</button>
+            <button type="button" data-md="cita" title="Cita">❝</button>
+            <span class="toolbar-sep" aria-hidden="true"></span>
+            <button type="button" data-md="codigo" title="Código">&lt;/&gt;</button>
+            <button type="button" data-md="enlace" title="Enlace (Ctrl+K)">🔗</button>
+            <button type="button" data-md="fecha" title="Insertar la fecha de hoy">📅</button>
+          </div>
+
+          <div class="notes-editor-body">
+            <textarea id="noteContentInput" class="note-content-input" placeholder="Empieza a escribir… usa - para listas y - [ ] para casillas" aria-label="Contenido de la nota"></textarea>
+            <div id="notePreview" class="note-preview hidden" aria-label="Vista previa de la nota"></div>
+          </div>
+
+          <div class="notes-editor-footer">
+            <span id="noteChecks"></span>
+            <span class="spacer"></span>
+            <span id="noteReadTime"></span>
+            <span id="noteWordCount">0 palabras</span>
+            <span id="noteCharCount">0 caracteres</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ HORARIO ============ -->
+      <div id="horarioMainContainer" class="main-content-tab hidden" role="tabpanel" aria-labelledby="tabHorario">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Horario semanal</h2>
+            <p id="horarioResumen" class="section-subtitle">Sin clases todavía</p>
+          </div>
+          <div class="horario-toolbar">
+            <label class="toggle-chip" title="Mostrar sábado y domingo">
+              <input type="checkbox" id="toggleFinde"> Fin de semana
+            </label>
+            <button type="button" id="btnFestivos" class="btn-bulk" title="Festivos, vacaciones y semanas A/B">🎉 Festivos</button>
+            <button type="button" id="btnPrintHorario" class="btn-bulk" title="Imprimir o guardar como PDF">🖨️ Imprimir</button>
+            <button type="button" id="btnNuevaClase" class="btn-add">＋ Nueva clase</button>
+          </div>
+        </header>
+
+        <nav class="semana-nav" aria-label="Cambiar de semana">
+          <button type="button" id="horarioSemanaAnterior" class="btn-bulk" aria-label="Semana anterior">‹</button>
+          <span id="horarioSemanaTexto" class="semana-texto" aria-live="polite"></span>
+          <button type="button" id="horarioSemanaSiguiente" class="btn-bulk" aria-label="Semana siguiente">›</button>
+          <button type="button" id="horarioSemanaHoy" class="btn-bulk">Hoy</button>
+        </nav>
+
+        <div class="horario-scroll">
+          <div id="horarioGrid" class="hg"></div>
+          <div id="horarioVacio" class="horario-vacio hidden">
+            <div>
+              <span aria-hidden="true">🎓</span>
+              <p>Aún no has añadido clases.<br>Pulsa en cualquier hueco del horario o en «Nueva clase».</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="horario-hint">Consejo: haz clic en un hueco para crear una clase, en una clase para editarla y ver sus tareas, o en una asignatura del panel para resaltarla.</p>
+      </div>
+
+      <!-- ============ CALENDARIO ============ -->
+      <div id="calendarioMainContainer" class="main-content-tab hidden" role="tabpanel" aria-labelledby="tabCalendario">
+        <header class="section-header">
+          <div>
+            <h2 id="calTitulo" class="section-title">Calendario</h2>
+            <p id="calResumen" class="section-subtitle"></p>
+          </div>
+          <div class="cal-navegacion">
+            <button type="button" id="calExportar" class="btn-bulk" title="Exportar clases, exámenes, eventos y tareas con fecha a Google Calendar, Outlook…">📤 Exportar</button>
+            <button type="button" id="calAnterior" class="btn-bulk" aria-label="Mes anterior">‹</button>
+            <button type="button" id="calHoy" class="btn-bulk">Hoy</button>
+            <button type="button" id="calSiguiente" class="btn-bulk" aria-label="Mes siguiente">›</button>
+          </div>
+        </header>
+
+        <div class="cal-leyenda" aria-hidden="true">
+          <span style="--c:var(--prio-high)">Examen</span>
+          <span style="--c:#42a5f5">Evento</span>
+          <span style="--c:var(--accent)">Tarea</span>
+        </div>
+
+        <div id="calGrid" class="cal-grid"></div>
+
+        <section class="cal-dia-panel" aria-labelledby="calDiaTitulo">
+          <div class="cal-dia-cabecera">
+            <h3 id="calDiaTitulo"></h3>
+            <span id="calDiaRelativo" class="cal-dia-relativo"></span>
+          </div>
+          <ul id="calDiaLista" class="cal-dia-lista"></ul>
+
+          <div class="cal-nuevo">
+            <div id="calTipoNuevo" class="segmentado">
+              <button type="button" data-tipo="examen">📝 Examen</button>
+              <button type="button" data-tipo="evento">📌 Evento</button>
+              <button type="button" data-tipo="tarea">✅ Tarea</button>
+            </div>
+            <div class="cal-nuevo-fila">
+              <input type="text" id="calNuevoTexto" autocomplete="off" aria-label="Qué hay que hacer este día">
+              <input type="time" id="calNuevaHora" step="300" aria-label="Hora (opcional)" title="Hora (opcional)">
+              <button type="button" id="calAgregar" class="btn-add">Añadir</button>
+            </div>
+          </div>
+        </section>
+
+        <p class="horario-hint">Los exámenes y eventos solo se ven aquí. Las tareas con fecha también aparecen en el calendario (y las que añadas como «Tarea», también en Tareas). Arrastra para cambiar de día.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ PANEL DE DETALLE DE TAREA ============ -->
+  <div id="modalTarea" class="modal drawer" role="dialog" aria-modal="true" aria-label="Detalles de la tarea" aria-hidden="true">
+    <div class="modal-content drawer-content">
+      <div class="drawer-header">
+        <label class="checkbox-container checkbox-grande" title="Completar">
+          <input type="checkbox" id="detCompletada" aria-label="Tarea completada">
+          <span class="checkmark"></span>
+        </label>
+        <textarea id="detTexto" class="det-texto" rows="1" aria-label="Texto de la tarea"></textarea>
+        <button type="button" id="closeModalTarea" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="det-campo">
+          <span class="det-label">Tipo</span>
+          <div id="detTipo" class="segmentado">
+            <button type="button" data-tipo="tarea">✅ Tarea</button>
+            <button type="button" data-tipo="examen">📝 Examen</button>
+            <button type="button" data-tipo="evento">📌 Evento</button>
+          </div>
+        </div>
+
+        <div class="det-campo">
+          <span class="det-label">Prioridad</span>
+          <div id="detPrioridad" class="segmentado">
+            <button type="button" class="prio-opcion" data-prio="ninguna">Ninguna</button>
+            <button type="button" class="prio-opcion prio-baja" data-prio="baja">Baja</button>
+            <button type="button" class="prio-opcion prio-media" data-prio="media">Media</button>
+            <button type="button" class="prio-opcion prio-alta" data-prio="alta">Alta</button>
+          </div>
+        </div>
+
+        <div class="det-campo">
+          <span class="det-label">Fecha</span>
+          <div class="det-fila">
+            <input type="date" id="detFecha" aria-label="Fecha límite">
+            <input type="time" id="detHora" aria-label="Hora" step="300">
+          </div>
+          <div id="detFechasRapidas" class="fechas-rapidas">
+            <button type="button" data-dias="0">Hoy</button>
+            <button type="button" data-dias="1">Mañana</button>
+            <button type="button" data-dias="7">+1 semana</button>
+            <button type="button" data-dias="quitar">Sin fecha</button>
+          </div>
+        </div>
+
+        <div class="det-fila det-fila-2">
+          <div class="det-campo">
+            <label class="det-label" for="detCategoria">Categoría</label>
+            <select id="detCategoria"></select>
+          </div>
+          <div class="det-campo">
+            <label class="det-label" for="detRepetir">Repetir</label>
+            <select id="detRepetir">
+              <option value="">No se repite</option>
+              <option value="diaria">🔁 Cada día</option>
+              <option value="laborables">🔁 Entre semana (L-V)</option>
+              <option value="semanal">🔁 Cada semana</option>
+              <option value="mensual">🔁 Cada mes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="det-campo">
+          <span class="det-label">Subtareas <span id="detSubtareasContador" class="mini-count"></span></span>
+          <ul id="detSubtareas" class="subtareas"></ul>
+          <div class="subtarea-nueva">
+            <input type="text" id="detNuevaSubtarea" placeholder="Añadir un paso…" aria-label="Nueva subtarea">
+            <button type="button" id="detAgregarSubtarea" class="btn-icon" aria-label="Añadir subtarea">＋</button>
+          </div>
+        </div>
+
+        <div class="det-campo">
+          <label class="det-label" for="detNotas">Notas</label>
+          <textarea id="detNotas" rows="4" placeholder="Detalles, enlaces, lo que necesites recordar…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <span id="detInfo" class="det-info"></span>
+        <div class="drawer-footer-actions">
+          <button type="button" id="detPlan" class="btn-note-control hidden" title="Crear tareas de repaso los días antes del examen">📚 Plan de estudio</button>
+          <button type="button" id="detDuplicar" class="btn-note-control">📄 Duplicar</button>
+          <button type="button" id="detEliminar" class="btn-note-control btn-danger">🗑️ Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Gestionar Categorías -->
+  <div id="modalCategorias" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Categorías</h2>
+        <button type="button" id="closeModalCategorias" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevaCategoria" class="form-nueva-cat">
+          <div class="form-group-row">
+            <div class="input-emoji-wrapper">
+              <label for="nuevaCatIcono">Icono</label>
+              <input type="text" id="nuevaCatIcono" value="📁" maxlength="8" placeholder="Emoji">
+            </div>
+            <div class="input-nombre-wrapper">
+              <label for="nuevaCatNombre">Nombre</label>
+              <input type="text" id="nuevaCatNombre" placeholder="Ej. Estudio, Deporte..." required>
+            </div>
+            <button type="submit" class="btn-add-cat">Añadir</button>
+          </div>
+        </form>
+
+        <div class="categorias-manage-list-container">
+          <h3>Tus categorías</h3>
+          <ul id="listaCategoriasManage" class="categorias-manage-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Crear / Editar una Clase del Horario -->
+  <div id="modalClase" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalClaseTitle" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalClaseTitle">Nueva clase</h2>
+        <button type="button" id="closeModalClase" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <form id="formClase" class="modal-body form-clase" novalidate>
+        <div class="field">
+          <label for="claseAsignatura">Asignatura</label>
+          <input type="text" id="claseAsignatura" list="asignaturasDatalist" placeholder="Ej. Matemáticas" autocomplete="off">
+          <datalist id="asignaturasDatalist"></datalist>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Días <small>(puedes elegir varios)</small></span>
+          <div id="claseDias" class="day-chips"></div>
+        </div>
+
+        <div class="field hidden" id="claseSemanaCampo">
+          <span class="field-label">Semanas</span>
+          <div class="segmentado" role="group" aria-label="Semanas en las que hay esta clase">
+            <button type="button" data-semana="">Todas</button>
+            <button type="button" data-semana="A">Solo A</button>
+            <button type="button" data-semana="B">Solo B</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="claseInicio">Empieza</label>
+            <input type="time" id="claseInicio" step="300">
+          </div>
+          <div class="field">
+            <label for="claseFin">Termina</label>
+            <input type="time" id="claseFin" step="300">
+          </div>
+        </div>
+        <p id="claseAviso" class="clase-aviso" aria-live="polite"></p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="claseAula">Aula</label>
+            <input type="text" id="claseAula" placeholder="Ej. B-204" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="claseProfesor">Profesor/a</label>
+            <input type="text" id="claseProfesor" placeholder="Opcional" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Color</span>
+          <div id="claseColores" class="color-swatches"></div>
+        </div>
+
+        <div class="field">
+          <label for="claseNotas">Notas</label>
+          <textarea id="claseNotas" rows="2" placeholder="Material, enlace de la clase, exámenes..."></textarea>
+        </div>
+
+        <!-- Tareas relacionadas con la asignatura -->
+        <div id="claseTareas" class="clase-tareas hidden">
+          <span class="field-label" id="claseTareasTitulo">Tareas pendientes</span>
+          <ul id="claseTareasLista" class="clase-tareas-lista"></ul>
+          <div class="subtarea-nueva">
+            <input type="text" id="claseNuevaTarea" placeholder="Ej. «Examen el 12/11 !alta»" aria-label="Nueva tarea para esta asignatura">
+            <button type="button" id="claseAgregarTarea" class="btn-icon" aria-label="Añadir tarea">＋</button>
+          </div>
+        </div>
+
+        <!-- Apuntes (notas) de la asignatura -->
+        <div id="claseApuntes" class="clase-tareas hidden">
+          <span class="field-label" id="claseApuntesTitulo">Apuntes</span>
+          <ul id="claseApuntesLista" class="clase-tareas-lista"></ul>
+          <button type="button" id="claseNuevaNota" class="btn-link">📝 Nueva nota de esta asignatura</button>
+        </div>
+
+        <p id="claseError" class="form-error" role="alert"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="btnEliminarClase" class="btn-note-control btn-danger hidden">🗑️ Eliminar</button>
+          <button type="button" id="btnDuplicarClase" class="btn-note-control hidden" title="Crear una copia en otro día">📄 Duplicar</button>
+          <span class="spacer"></span>
+          <button type="button" id="btnCancelarClase" class="btn-bulk">Cancelar</button>
+          <button type="submit" class="btn-add">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ajustes -->
+  <div id="modalAjustes" class="modal" role="dialog" aria-modal="true" aria-labelledby="ajustesTitulo" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="ajustesTitulo">Ajustes</h2>
+        <button type="button" id="closeModalAjustes" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <div class="modal-body ajustes">
+        <section class="ajuste">
+          <h3>Tu resumen</h3>
+          <div id="ajusteEstadisticas" class="stats-grid"></div>
+        </section>
+
+        <section class="ajuste">
+          <label for="ajusteNombre"><h3>¿Cómo te llamas?</h3></label>
+          <input type="text" id="ajusteNombre" maxlength="30" placeholder="Para saludarte (opcional)" autocomplete="given-name">
+        </section>
+
+        <section class="ajuste">
+          <h3>Tema</h3>
+          <div id="ajusteTema" class="segmentado">
+            <button type="button" data-tema="light">☀️ Claro</button>
+            <button type="button" data-tema="dark">🌙 Oscuro</button>
+            <button type="button" data-tema="system">💻 Sistema</button>
+          </div>
+        </section>
+
+        <section class="ajuste">
+          <h3>Color de acento</h3>
+          <div id="ajusteAcento" class="acentos"></div>
+        </section>
+
+        <section class="ajuste ajuste-fila">
+          <div>
+            <h3>Confeti al completar</h3>
+            <p class="ajuste-ayuda">Una pequeña celebración por cada tarea.</p>
+          </div>
+          <label class="interruptor">
+            <input type="checkbox" id="ajusteConfeti">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+            <span class="sr-only">Confeti al completar</span>
+          </label>
+        </section>
+
+        <section class="ajuste ajuste-fila">
+          <div>
+            <h3>Recordatorios</h3>
+            <p class="ajuste-ayuda">Aviso 15 min antes de lo que tenga hora y la víspera de cada examen (con la app abierta).</p>
+          </div>
+          <label class="interruptor">
+            <input type="checkbox" id="ajusteRecordatorios">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+            <span class="sr-only">Recordatorios</span>
+          </label>
+        </section>
+
+        <section class="ajuste">
+          <h3>Tus datos</h3>
+          <p class="ajuste-ayuda">Todo se guarda en este dispositivo, sin cuenta y sin internet. Guarda una copia de vez en cuando (por ejemplo, en Google Drive) para no perder nada si cambias de móvil.</p>
+          <p id="estadoCopia" class="estado-copia"></p>
+          <div class="ajuste-botones">
+            <button type="button" id="ajustesExportar" class="btn-add">💾 Guardar copia</button>
+            <button type="button" id="ajustesImportar" class="btn-bulk">📂 Restaurar copia</button>
+            <input type="file" id="inputImportBackup" accept="application/json,.json" hidden>
+          </div>
+          <div id="btnRespaldoAuto" class="respaldo-auto hidden">
+            <p id="respaldoAutoInfo" class="ajuste-ayuda"></p>
+            <button type="button" class="btn-link">🛟 Recuperar datos de antes de la actualización</button>
+          </div>
+        </section>
+
+        <section class="ajuste ajuste-fila">
+          <div>
+            <h3>Sincronizar dispositivos</h3>
+            <p id="ajusteSyncResumen" class="ajuste-ayuda"></p>
+          </div>
+          <button type="button" id="ajustesSync" class="btn-bulk">☁️ Configurar</button>
+        </section>
+
+        <section class="ajuste ajuste-fila">
+          <div>
+            <h3>Festivos y semanas A/B</h3>
+            <p class="ajuste-ayuda">Días sin clase en el horario y el calendario.</p>
+          </div>
+          <button type="button" id="ajustesFestivos" class="btn-bulk">🎉 Configurar</button>
+        </section>
+
+        <button type="button" id="ajustesAtajos" class="btn-link ajustes-atajos">⌨️ Ver atajos de teclado</button>
+        <a href="privacidad.html" class="btn-link ajustes-atajos" target="_blank" rel="noopener">🔒 Política de privacidad</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sincronización entre dispositivos -->
+  <div id="modalSync" class="modal" role="dialog" aria-modal="true" aria-labelledby="syncTitulo" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="syncTitulo">Sincronizar dispositivos</h2>
+        <button type="button" id="closeModalSync" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <div class="modal-body ajustes">
+        <p id="syncEstado" class="estado-copia" role="status"></p>
+
+        <section id="syncPasoConfig" class="ajuste">
+          <h3>1 · Prepara Supabase (gratis)</h3>
+          <ol class="sync-pasos">
+            <li>Crea una cuenta y un proyecto en <b>supabase.com</b>.</li>
+            <li>Abre <b>SQL Editor</b>, pega el código y pulsa <b>Run</b>.
+              <button type="button" id="syncCopiarSql" class="btn-link sync-copiar">📋 Copiar el código SQL</button>
+            </li>
+            <li>En <b>Project Settings → API</b> copia la <b>Project URL</b> y la clave <b>anon public</b>.</li>
+          </ol>
+          <form id="formSyncConfig" class="sync-form" novalidate>
+            <label class="fest-campo">
+              <span>Project URL</span>
+              <input type="url" id="syncUrl" placeholder="https://abcd1234.supabase.co" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="fest-campo">
+              <span>Clave «anon public»</span>
+              <input type="text" id="syncClave" placeholder="eyJhbGciOi…" autocomplete="off" spellcheck="false">
+            </label>
+            <button type="submit" class="btn-add">Continuar</button>
+          </form>
+        </section>
+
+        <section id="syncPasoCuenta" class="ajuste hidden">
+          <h3>2 · Tu cuenta</h3>
+          <p class="ajuste-ayuda">Proyecto <b id="syncProyecto"></b>. Usa el mismo correo y contraseña en todos tus dispositivos.</p>
+          <form id="formSyncCuenta" class="sync-form" novalidate>
+            <label class="fest-campo">
+              <span>Correo</span>
+              <input type="email" id="syncEmail" autocomplete="email" spellcheck="false">
+            </label>
+            <label class="fest-campo">
+              <span>Contraseña</span>
+              <input type="password" id="syncPassword" autocomplete="current-password">
+            </label>
+            <div class="ajuste-botones">
+              <button type="submit" id="syncEntrar" class="btn-add">Entrar</button>
+              <button type="button" id="syncCrear" class="btn-bulk">Crear cuenta</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="syncPasoConectado" class="ajuste hidden">
+          <h3>Conectado</h3>
+          <p class="ajuste-ayuda">Cuenta <b id="syncCuenta"></b>. Los cambios se suben solos y se reciben al abrir la app, al volver a ella y cada minuto.</p>
+          <div class="ajuste-botones">
+            <button type="button" id="syncAhora" class="btn-add">🔄 Sincronizar ahora</button>
+            <button type="button" id="syncSalir" class="btn-bulk">Cerrar sesión</button>
+          </div>
+          <button type="button" id="syncBorrarCuenta" class="btn-link sync-borrar">🗑️ Eliminar mi cuenta y mis datos de la nube</button>
+        </section>
+
+        <p id="syncError" class="form-error" role="alert"></p>
+        <p class="ajuste-ayuda">Se sincronizan tareas, notas, horario, categorías, estadísticas y festivos; el tema y el color son de cada dispositivo. Si cambias lo mismo en dos dispositivos sin conexión, se combinan (algo borrado en uno podría volver a aparecer).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Festivos, vacaciones y semanas A/B -->
+  <div id="modalFestivos" class="modal" role="dialog" aria-modal="true" aria-labelledby="festivosTitulo" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="festivosTitulo">Festivos y vacaciones</h2>
+        <button type="button" id="closeModalFestivos" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <div class="modal-body ajustes">
+        <section class="ajuste">
+          <label for="festComunidad"><h3>Comunidad autónoma</h3></label>
+          <select id="festComunidad"></select>
+          <p class="ajuste-ayuda">Los días festivos no muestran clases en el horario ni en el calendario. Cada año puede cambiar algún festivo autonómico: desmarca los que no tengas y añade los locales abajo.</p>
+        </section>
+
+        <section class="ajuste ajuste-fila">
+          <div>
+            <h3>Festivos oficiales</h3>
+            <p class="ajuste-ayuda">Nacionales y de tu comunidad.</p>
+          </div>
+          <label class="interruptor">
+            <input type="checkbox" id="festActivos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+            <span class="sr-only">Usar festivos oficiales</span>
+          </label>
+        </section>
+
+        <section class="ajuste">
+          <h3>Vacaciones y fiestas locales</h3>
+          <form id="formFestivo" class="fest-form" novalidate>
+            <label class="fest-campo fest-campo-nombre">
+              <span>Nombre</span>
+              <input type="text" id="festNombre" maxlength="60" placeholder="Ej. Vacaciones de Navidad" autocomplete="off">
+            </label>
+            <label class="fest-campo">
+              <span>Desde</span>
+              <input type="date" id="festDesde" required>
+            </label>
+            <label class="fest-campo">
+              <span>Hasta <small>(opcional)</small></span>
+              <input type="date" id="festHasta">
+            </label>
+            <button type="submit" class="btn-add">Añadir</button>
+          </form>
+          <p id="festError" class="form-error" role="alert"></p>
+          <ul id="festPropios" class="fest-lista"></ul>
+        </section>
+
+        <section class="ajuste">
+          <div class="ajuste ajuste-fila">
+            <div>
+              <h3>Semanas alternas (A/B)</h3>
+              <p class="ajuste-ayuda">Para clases que solo hay una semana sí y otra no. Luego elige «Solo A» o «Solo B» en cada clase.</p>
+            </div>
+            <label class="interruptor">
+              <input type="checkbox" id="festSemanasAB">
+              <span class="interruptor-pista" aria-hidden="true"></span>
+              <span class="sr-only">Usar semanas alternas</span>
+            </label>
+          </div>
+          <div id="festSemanaActual" class="fest-semana hidden">
+            <span>Esta semana es la</span>
+            <div class="segmentado" role="group" aria-label="Letra de la semana actual">
+              <button type="button" data-letra="A">Semana A</button>
+              <button type="button" data-letra="B">Semana B</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="ajuste">
+          <h3>Próximos festivos</h3>
+          <ul id="festOficiales" class="fest-lista"></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paleta de comandos -->
+  <div id="modalPaleta" class="modal paleta" role="dialog" aria-modal="true" aria-label="Buscar y comandos" aria-hidden="true">
+    <div class="modal-content paleta-content">
+      <div class="paleta-buscador">
+        <span aria-hidden="true">🔍</span>
+        <input type="text" id="paletaInput" aria-label="Buscar en la agenda o escribir una acción" placeholder="Busca tareas, notas, clases… o escribe una acción" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="paletaResultados">
+        <kbd>Esc</kbd>
+      </div>
+      <div id="paletaResultados" class="paleta-resultados" role="listbox"></div>
+      <div class="paleta-pie">
+        <span><kbd>↑</kbd><kbd>↓</kbd> moverse</span>
+        <span><kbd>Enter</kbd> abrir</span>
+        <span><kbd>Ctrl</kbd>+<kbd>K</kbd> abrir/cerrar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atajos de teclado -->
+  <div id="modalAtajos" class="modal" role="dialog" aria-modal="true" aria-labelledby="atajosTitulo" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="atajosTitulo">Atajos de teclado</h2>
+        <button type="button" id="closeModalAtajos" class="btn-close-modal" aria-label="Cerrar">✖</button>
+      </div>
+      <div class="modal-body">
+        <dl class="atajos">
+          <div><dt><kbd>Ctrl</kbd>+<kbd>K</kbd></dt><dd>Buscar en toda la agenda y ejecutar acciones</dd></div>
+          <div><dt><kbd>N</kbd></dt><dd>Nueva tarea, nota, clase o examen (según la pestaña)</dd></div>
+          <div><dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></dt><dd>Ir a Tareas, Notas, Horario o Calendario</dd></div>
+          <div><dt><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Calendario: moverse por los días (<kbd>T</kbd> hoy, <kbd>RePág</kbd>/<kbd>AvPág</kbd> mes)</dd></div>
+          <div><dt><kbd>/</kbd></dt><dd>Buscar en la pestaña actual</dd></div>
+          <div><dt><kbd>D</kbd></dt><dd>Cambiar entre tema claro y oscuro</dd></div>
+          <div><dt><kbd>Esc</kbd></dt><dd>Cerrar ventanas o limpiar la búsqueda</dd></div>
+          <div><dt><kbd>Ctrl</kbd>+<kbd>E</kbd></dt><dd>Notas: alternar edición y vista</dd></div>
+          <div><dt><kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>I</kbd></dt><dd>Notas: negrita / cursiva</dd></div>
+          <div><dt><kbd>?</kbd></dt><dd>Mostrar esta ayuda</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación -->
+  <div id="modalConfirmar" class="modal modal-confirmar" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitulo" aria-describedby="confirmMensaje" aria-hidden="true">
+    <div class="modal-content">
+      <div class="confirmar-cuerpo">
+        <span id="confirmIcono" class="confirmar-icono" aria-hidden="true">❓</span>
+        <h2 id="confirmTitulo">¿Seguro?</h2>
+        <p id="confirmMensaje"></p>
+      </div>
+      <div class="modal-actions confirmar-acciones">
+        <button type="button" id="confirmCancelar" class="btn-bulk">Cancelar</button>
+        <button type="button" id="confirmAceptar" class="btn-add">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aviso flotante -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/nucleo.js?v=17"></script>
+  <script src="js/tareas/datos.js?v=17"></script>
+  <script src="js/tareas/entrada.js?v=17"></script>
+  <script src="js/tareas/lista.js?v=17"></script>
+  <script src="js/tareas/lateral.js?v=17"></script>
+  <script src="js/tareas/acciones.js?v=17"></script>
+  <script src="js/tareas/panel.js?v=17"></script>
+  <script src="js/tareas/categorias.js?v=17"></script>
+  <script src="js/tareas/eventos.js?v=17"></script>
+  <script src="js/notas.js?v=17"></script>
+  <script src="js/festivos.js?v=17"></script>
+  <script src="js/horario.js?v=17"></script>
+  <script src="js/horario-festivos.js?v=17"></script>
+  <script src="js/calendario.js?v=17"></script>
+  <script src="js/ajustes.js?v=17"></script>
+  <script src="js/paleta.js?v=17"></script>
+  <script src="js/sync.js?v=17"></script>
+  <script src="app.js?v=17"></script>
+</body>
+</html>

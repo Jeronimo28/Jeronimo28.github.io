@@ -1,0 +1,9 @@
+{
+  "name": "mi-agenda",
+  "private": true,
+  "description": "Agenda personal: tareas, notas, horario semanal de clases y calendario",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "nueva-version": "node scripts/nueva-version.js"
+  }
+}

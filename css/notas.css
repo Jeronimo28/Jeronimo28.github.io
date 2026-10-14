@@ -1,0 +1,581 @@
+/* ==========================================
+   NOTAS: lista lateral, editor, barra de formato y vista previa
+   ========================================== */
+
+/* Sidebar de Notas */
+.notes-sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+  max-height: 420px;
+  overflow: hidden;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.notes-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notes-sidebar-header h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.notes-search-wrapper {
+  position: relative;
+}
+
+.notes-search-wrapper input {
+  width: 100%;
+  padding: 10px 12px 10px 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.notes-search-wrapper input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.notes-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.notes-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+.notes-list-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notes-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notes-list-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+.note-sidebar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--item-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+
+.note-sidebar-item:hover {
+  background: var(--item-hover);
+  border-color: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.note-sidebar-item.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.note-sidebar-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-sidebar-snippet {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-sidebar-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+  margin-top: 2px;
+}
+
+/* Editor de Notas Principal */
+.notes-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.notes-editor-header {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.note-title-input {
+  width: 100%;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: var(--text-main);
+  background: transparent;
+  border: none;
+  outline: none;
+  transition: var(--transition);
+}
+
+.note-title-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.notes-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.note-date-badge {
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+}
+
+.notes-actions {
+  display: flex;
+}
+
+.notes-editor-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-content-input {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  resize: none;
+  outline: none;
+  transition: var(--transition);
+}
+
+.note-content-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.notes-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Adaptación responsive para Notas */
+@media (max-width: 768px) {
+  .notes-editor-container {
+    min-height: auto;
+  }
+
+  .notes-sidebar-container {
+    max-height: 250px;
+  }
+}
+
+/* ---------- Notas ---------- */
+.notes-sidebar-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.note-sidebar-item {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.note-sidebar-title .pin {
+  margin-right: 4px;
+  font-size: 0.75rem;
+}
+
+.notes-editor-container {
+  gap: 14px;
+}
+
+.notes-editor-header {
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.note-title-input {
+  font-size: 1.9rem;
+  padding: 2px 0;
+}
+
+.note-date-badge {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  transition: color 0.3s ease;
+}
+
+.note-date-badge.guardado {
+  color: var(--ok);
+}
+
+.notes-actions {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.note-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  transition: opacity 0.2s ease;
+}
+
+.note-toolbar.deshabilitada {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.note-toolbar button {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.note-toolbar button:hover {
+  background: var(--accent-light);
+  color: var(--accent-texto);
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--border-color);
+}
+
+.notes-editor-body {
+  min-height: 360px;
+}
+
+.note-content-input {
+  font-size: 0.98rem;
+  line-height: 1.7;
+  padding: 18px 20px;
+  tab-size: 2;
+}
+
+.note-preview {
+  flex: 1;
+  min-height: 360px;
+  padding: 18px 24px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  line-height: 1.7;
+  font-size: 0.98rem;
+  word-wrap: break-word;
+  cursor: text;
+}
+
+.note-preview > * + * {
+  margin-top: 0.6em;
+}
+
+.note-preview h2,
+.note-preview h3,
+.note-preview h4 {
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.25;
+  margin-top: 1em;
+}
+
+.note-preview h2 { font-size: 1.5rem; }
+
+.note-preview h3 { font-size: 1.2rem; }
+
+.note-preview h4 { font-size: 1.05rem; }
+
+.note-preview > :first-child { margin-top: 0; }
+
+.note-preview ul,
+.note-preview ol {
+  padding-left: 1.4em;
+}
+
+.note-preview li + li {
+  margin-top: 0.2em;
+}
+
+.note-preview li.md-check {
+  list-style: none;
+  margin-left: -1.4em;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.note-preview li.md-check input {
+  margin-top: 0.4em;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.note-preview li.md-check.hecho span {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.note-preview blockquote {
+  padding: 6px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-main);
+}
+
+.note-preview code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--text-main) 8%, transparent);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.note-preview pre {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text-main) 7%, transparent);
+  overflow-x: auto;
+}
+
+.note-preview pre code {
+  padding: 0;
+  background: none;
+}
+
+.note-preview a {
+  color: var(--accent-texto);
+  text-underline-offset: 2px;
+}
+
+.note-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 1.2em 0;
+}
+
+.preview-vacia {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.notes-editor-footer {
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.notes-editor-footer span:empty {
+  display: none;
+}
+
+.notes-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 420px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.notes-empty > span {
+  font-size: 3.2rem;
+  animation: flotar 3s ease-in-out infinite;
+}
+
+.notes-empty h2 {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-main);
+}
+
+.notes-empty .btn-add {
+  margin-top: 8px;
+}
+
+.modal-content,
+.drawer-body,
+.paleta-resultados,
+.note-preview {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* ---------- Notas por asignatura ---------- */
+.notas-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nota-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nota-filtro b {
+  color: var(--text-main);
+}
+
+.nota-filtro:hover {
+  border-color: var(--accent);
+  color: var(--text-main);
+}
+
+.nota-filtro.active {
+  border-color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent);
+  color: var(--text-main);
+}
+
+.nota-filtro-punto,
+.note-asig-tag::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+
+.note-sidebar-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-asig-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 140px;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.note-asig-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+}
+
+.note-asignatura {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--c, var(--border-color));
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  font-size: 0.8rem;
+}
+
+.note-asignatura select {
+  max-width: 180px;
+  height: 32px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notes-controls-row .note-date-badge {
+  margin-right: auto;
+}
+
+/* ---------- Contraste ---------- */
+.btn-new-note {
+  color: var(--text-main);
+}

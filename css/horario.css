@@ -1,0 +1,1001 @@
+/* ==========================================
+   HORARIO: cuadrante semanal, panel lateral y formulario de clase
+   ========================================== */
+
+/* Aviso de la clase actual / siguiente */
+.next-class-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 10%, var(--bg-input));
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.next-class-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Barras de desplazamiento finas */
+.main-panel::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.horario-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.main-panel::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.horario-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+.main-panel::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.horario-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.horario-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.toggle-chip:hover {
+  border-color: var(--accent);
+}
+
+.toggle-chip input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.horario-scroll {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  flex-shrink: 0;
+}
+
+.hg {
+  display: grid;
+  grid-template-columns: 54px repeat(var(--dias, 5), minmax(96px, 1fr));
+  min-width: calc(54px + var(--dias, 5) * 96px);
+}
+
+.hg-corner {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hg-dayhead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.hg-daynum {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  color: var(--text-main);
+}
+
+.hg-dayhead.today {
+  color: var(--accent-texto);
+}
+
+.hg-dayhead.today .hg-daynum {
+  background: var(--accent-fondo);
+  color: #fff;
+}
+
+.hg-times {
+  position: relative;
+  height: var(--alto);
+}
+
+.hg-times span {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hg-times span:first-child {
+  transform: translateY(3px);
+}
+
+.hg-col {
+  position: relative;
+  height: var(--alto);
+  border-left: 1px solid var(--border-color);
+  cursor: pointer;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--border-color) 0 1px,
+    transparent 1px calc(var(--hora) / 2),
+    var(--grid-soft) calc(var(--hora) / 2) calc(var(--hora) / 2 + 1px),
+    transparent calc(var(--hora) / 2 + 1px) var(--hora)
+  );
+  transition: background-color 0.2s ease;
+}
+
+.hg-col:hover {
+  background-color: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.hg-col.today {
+  background-color: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.hg-clase {
+  position: absolute;
+  left: calc(var(--carril) * (100% / var(--total)) + 3px);
+  width: calc(100% / var(--total) - 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: none;
+  border-left: 4px solid var(--c);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c) 20%, var(--surface));
+  color: var(--text-main);
+  font-family: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .hg-clase {
+  background: color-mix(in srgb, var(--c) 30%, var(--surface));
+}
+
+.hg-clase:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+  z-index: 2;
+}
+
+.hg-clase.ahora {
+  box-shadow: 0 0 0 2px var(--c);
+}
+
+.hg-clase-nombre {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hg-clase-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.hg-clase.compacta {
+  padding: 3px 8px;
+  justify-content: center;
+}
+
+.hg-clase.compacta .hg-clase-meta {
+  display: none;
+}
+
+.hg-clase.compacta .hg-clase-nombre {
+  -webkit-line-clamp: 1;
+}
+
+/* Clases ya terminadas hoy */
+.hg-clase.pasada {
+  opacity: 0.55;
+}
+
+.hg-clase.pasada:hover {
+  opacity: 1;
+}
+
+/* Clase en curso: halo suave que late */
+.hg-clase.ahora {
+  animation: claseLatido 2.4s ease-in-out infinite;
+}
+
+/* El profesor solo aparece en bloques con espacio de sobra */
+.hg-clase-extra {
+  display: none;
+}
+
+.hg-clase.amplia .hg-clase-extra {
+  display: block;
+}
+
+.hg-clase-nota {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+
+.hg-clase.compacta .hg-clase-nota {
+  display: none;
+}
+
+/* Resaltar una asignatura desde el panel lateral */
+.hg.resaltando .hg-clase:not(.resaltada) {
+  opacity: 0.22;
+  filter: saturate(0.4);
+}
+
+.hg.resaltando .hg-clase.resaltada {
+  box-shadow: 0 0 0 2px var(--c), 0 6px 18px color-mix(in srgb, var(--c) 35%, transparent);
+  z-index: 2;
+}
+
+/* Línea de la hora actual */
+.hg-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--prio-high);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.hg-now::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--prio-high);
+}
+
+/* Línea de "ahora" en los demás días, más discreta */
+.hg-now.otro {
+  height: 1px;
+  background: color-mix(in srgb, var(--prio-high) 35%, transparent);
+}
+
+.hg-now.otro::before {
+  display: none;
+}
+
+/* Hora actual en la columna de horas */
+.hg-times .hg-times-now {
+  right: 4px;
+  z-index: 2;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--danger-fondo);
+  color: #fff;
+  font-size: 0.62rem;
+  transform: translateY(-50%);
+}
+
+/* Vista de un día (pantallas estrechas) */
+.hg.vista-dia {
+  grid-template-columns: 48px 1fr;
+  min-width: 0;
+}
+
+.hg-diatabs {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hg-diatab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 2px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.hg-diatab .hg-daynum {
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  font-size: 0.95rem;
+}
+
+.hg-diatab.today {
+  color: var(--accent-texto);
+}
+
+.hg-diatab.active {
+  background: var(--accent-fondo);
+  color: #fff;
+}
+
+.hg-diatab.active .hg-daynum {
+  color: #fff;
+}
+
+.hg-diatab-dots {
+  min-height: 0.7rem;
+  font-size: 0.6rem;
+  line-height: 0.7rem;
+  letter-spacing: 1px;
+}
+
+.hg.vista-dia ~ .horario-vacio {
+  inset: 70px 0 0 48px;
+}
+
+.horario-vacio {
+  position: absolute;
+  inset: 41px 0 0 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.horario-vacio > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 26px;
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  border: 1px dashed var(--border-color);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.horario-vacio span {
+  font-size: 2rem;
+}
+
+.horario-hint {
+  margin-top: -8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* El cuadrante usa toda la altura de la ventana para verse completo sin bajar */
+#horarioMainContainer {
+  gap: 14px;
+}
+
+/* Sidebar del horario */
+.horario-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.clases-hoy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clase-hoy {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--c);
+  background: var(--item-bg);
+  color: var(--text-main);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clase-hoy:hover {
+  transform: translateY(-1px);
+  background: var(--item-hover);
+}
+
+.clase-hoy.ahora {
+  background: color-mix(in srgb, var(--c) 14%, var(--item-bg));
+}
+
+.clase-hoy.pasada {
+  opacity: 0.5;
+}
+
+.clase-hoy-hora {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.clase-hoy-hora small {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.clase-hoy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.clase-hoy-info strong {
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clase-hoy-info small {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge-ahora {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c) 58%, black);
+  color: #fff;
+}
+
+.asignaturas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.asignatura-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.asignatura-item:hover {
+  background: var(--item-hover);
+}
+
+.asignatura-item.active {
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  border-color: color-mix(in srgb, var(--c) 55%, transparent);
+  font-weight: 700;
+}
+
+.clases-hoy-resumen {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.clase-hoy + .clases-hoy-resumen {
+  margin-top: 6px;
+}
+
+.hueco-libre {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.hueco-libre.ahora {
+  border-color: var(--accent);
+  color: var(--accent-texto);
+  font-weight: 700;
+}
+
+.hueco-libre.pasada {
+  opacity: 0.5;
+}
+
+/* Duración y solapes en el formulario de clase */
+.clase-aviso {
+  margin-top: -6px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.clase-aviso.alerta {
+  color: var(--danger-texto);
+  font-weight: 600;
+}
+
+.clase-aviso:empty {
+  display: none;
+}
+
+.asignatura-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+
+.asignatura-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asignatura-horas {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Formulario de clase (más específico que .modal-body) */
+.modal-body.form-clase {
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field label,
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.field-label small {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-clase input[type="text"],
+.form-clase input[type="time"],
+.form-clase textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  resize: vertical;
+  transition: var(--transition);
+}
+
+.form-clase input:focus,
+.form-clase textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.day-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.day-chip {
+  width: 48px;
+  padding: 8px 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.day-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent-texto);
+}
+
+.day-chip.active {
+  background: var(--accent-fondo);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border-color);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 2px var(--c);
+  transform: scale(1.12);
+}
+
+.form-error {
+  color: var(--danger-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.form-error:empty {
+  display: none;
+}
+
+@media (max-width: 500px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .horario-toolbar {
+    width: 100%;
+  }
+
+  .horario-toolbar .btn-add {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media print {
+  .sidebar,
+  .horario-toolbar,
+  .horario-hint,
+  .horario-vacio,
+  .hg-now,
+  #confetti-canvas,
+  .toast {
+    display: none !important;
+  }
+
+  .horario-scroll {
+    overflow: visible;
+  }
+
+  .hg {
+    min-width: 0;
+  }
+
+  .hg-col.today,
+  .hg-dayhead.today .hg-daynum {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  .hg-times-now,
+  .hg-clase-nota {
+    display: none !important;
+  }
+
+  .hg-clase.pasada,
+  .hg.resaltando .hg-clase:not(.resaltada) {
+    opacity: 1;
+    filter: none;
+    animation: none;
+  }
+
+  .hg-clase,
+  .hg-col {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+.next-class-chip {
+  margin-top: 8px;
+}
+
+/* ---------- Horario: extras ---------- */
+.asignatura-pendientes {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 58%, black);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.asignatura-pendientes + .asignatura-horas {
+  margin-left: 0;
+}
+
+.clase-tareas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+}
+
+.clase-tareas-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clase-tarea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--prio-color, var(--border-color));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clase-tarea.prio-alta { --prio-color: var(--prio-high); }
+
+.clase-tarea.prio-media { --prio-color: var(--prio-medium); }
+
+.clase-tarea.prio-baja { --prio-color: var(--prio-low); }
+
+.clase-tarea:hover {
+  border-color: var(--accent);
+}
+
+.clase-tarea-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clase-tareas-vacio,
+.clase-tareas-mas {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 2px;
+}
+
+.clase-tareas .subtarea-nueva input,
+.clase-tareas .subtarea-nueva .btn-icon {
+  height: 36px;
+}
+
+/* ---------- Navegación por semanas ---------- */
+.semana-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+.semana-nav .btn-bulk {
+  min-width: 38px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.semana-nav .btn-bulk:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.semana-texto {
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Días festivos en el cuadrante ---------- */
+.hg-col.festivo {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--festivo) 7%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+  cursor: default;
+}
+
+.hg-festivo {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px dashed color-mix(in srgb, var(--festivo) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--festivo);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.hg-dayhead.festivo,
+.hg-diatab.festivo {
+  color: var(--festivo);
+}
+
+/* Clase que solo hay en semanas A o B */
+.hg-clase-semana {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c) 35%, var(--surface));
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+@media (max-width: 500px) {
+  .semana-nav {
+    flex-wrap: wrap;
+  }
+
+  .semana-texto {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media print {
+  .semana-nav .btn-bulk {
+    display: none;
+  }
+}
+
+/* ---------- Contraste ---------- */
+.hg-clase-meta {
+  color: color-mix(in srgb, var(--text-muted) 65%, var(--text-main));
+}

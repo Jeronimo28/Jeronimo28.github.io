@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidad · Mi Agenda</title>
+  <link rel="icon" href="icon-192.png">
+  <style>
+    :root { --fondo: #f3e7dc; --papel: #fff9f2; --texto: #3b2f25; --suave: #6b5a4b; --acento: #8a5a2b; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fondo: #1e1a17; --papel: #2a2420; --texto: #efe6dc; --suave: #bcae9f; --acento: #e0a96d; }
+    }
+    body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+    article { background: var(--papel); border-radius: 14px; padding: 24px 20px; }
+    h1 { margin-top: 0; font-size: 1.6rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.8em; }
+    p, li { color: var(--texto); }
+    small, .fecha { color: var(--suave); }
+    a { color: var(--acento); }
+  </style>
+</head>
+<body>
+  <main>
+    <article>
+      <h1>Política de privacidad de Mi Agenda</h1>
+      <p class="fecha">Última actualización: 14 de octubre de 2026</p>
+
+      <h2>Resumen</h2>
+      <p>Mi Agenda funciona sin cuenta. Tus tareas, notas, horario y ajustes se guardan solo en tu dispositivo y no se envían a ningún sitio, salvo que actives tú la sincronización opcional.</p>
+
+      <h2>Datos que se guardan en tu dispositivo</h2>
+      <p>Tareas, notas, categorías, horario de clases, festivos, estadísticas de tareas completadas, tu nombre (si lo escribes) y tus preferencias de tema. No usamos publicidad, analíticas ni rastreadores. Las tipografías se cargan una vez desde Google Fonts, que recibe la dirección IP del dispositivo como cualquier web (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">política de Google</a>).</p>
+
+      <h2>Sincronización opcional</h2>
+      <p>Si decides crear una cuenta para sincronizar dispositivos, se guardan en un servidor de <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a> tu correo, tu contraseña (cifrada) y una copia de los datos de la agenda indicados arriba. Solo tú puedes leerlos con tu cuenta. La conexión va cifrada (HTTPS). Estos datos se usan únicamente para que la agenda funcione en tus dispositivos y no se venden ni se comparten con nadie más.</p>
+
+      <h2 id="borrar-cuenta">Cómo borrar tu cuenta y tus datos</h2>
+      <ul>
+        <li><b>Desde la app:</b> Ajustes → Sincronizar dispositivos → «Eliminar mi cuenta y mis datos de la nube». Se borran al momento la cuenta y todo lo guardado en el servidor.</li>
+        <li><b>Si ya no tienes la app:</b> escribe a <a href="mailto:TU_CORREO_DE_CONTACTO">TU_CORREO_DE_CONTACTO</a> desde el correo de tu cuenta pidiendo que se borre; se hará en un plazo máximo de 30 días.</li>
+        <li><b>Datos del dispositivo:</b> se borran al desinstalar la app o al borrar sus datos en los ajustes de Android.</li>
+      </ul>
+
+      <h2>Permisos</h2>
+      <p>Notificaciones: solo si activas los recordatorios, para avisarte de tareas y exámenes. Archivos: solo cuando tú eliges guardar o restaurar una copia de seguridad.</p>
+
+      <h2>Menores</h2>
+      <p>La app no está dirigida específicamente a menores de 13 años y no recoge datos de forma consciente de ellos.</p>
+
+      <h2>Contacto</h2>
+      <p>Para cualquier duda: <a href="mailto:TU_CORREO_DE_CONTACTO">TU_CORREO_DE_CONTACTO</a>.</p>
+    </article>
+  </main>
+</body>
+</html>

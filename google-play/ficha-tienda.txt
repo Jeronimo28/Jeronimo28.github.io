@@ -1,0 +1,49 @@
+NOMBRE DE LA APLICACIÓN (máx. 30 caracteres)
+Mi Agenda: tareas y horario
+
+DESCRIPCIÓN BREVE (máx. 80 caracteres)
+Tareas, notas, horario de clases y calendario. Sin cuenta y sin anuncios.
+
+DESCRIPCIÓN COMPLETA (máx. 4000 caracteres)
+Mi Agenda reúne en un solo sitio todo lo que necesitas para organizar tus clases y tu día a día, con un diseño sencillo inspirado en el Bullet Journal.
+
+✅ TAREAS
+• Añade tareas con fecha, hora, prioridad y categoría.
+• Vistas de Hoy, Próximos 7 días, Vencidas y Completadas.
+• Tareas que se repiten cada día, cada semana o cada mes.
+• Racha de días productivos y un poco de confeti al terminar.
+
+📝 NOTAS
+• Apuntes con formato: títulos, listas, negrita y casillas.
+• Organízalas por asignatura y encuéntralas con el buscador.
+
+📚 HORARIO DE CLASES
+• Tu horario semanal con colores, aulas y profesores.
+• Ve de un vistazo la próxima clase y los huecos libres.
+• Semanas alternas A/B y festivos de tu comunidad autónoma.
+
+📅 CALENDARIO
+• Exámenes, eventos y tareas en una vista mensual.
+• Cuenta atrás para los próximos exámenes.
+• Exporta tu calendario a Google Calendar u Outlook.
+
+🔒 TUS DATOS, EN TU MÓVIL
+• Funciona sin cuenta y sin conexión a internet.
+• Sin anuncios y sin rastreadores.
+• Guarda una copia de seguridad en Google Drive cuando quieras.
+• Sincronización opcional entre tu móvil y tu ordenador.
+
+🌙 A TU GUSTO
+• Tema claro y oscuro, y varios colores para elegir.
+• Recordatorios antes de cada tarea y la víspera de cada examen.
+
+CATEGORÍA
+Productividad
+
+ETIQUETAS SUGERIDAS
+Agenda, Organizador de tareas, Horario escolar, Notas, Calendario
+
+ARCHIVOS GRÁFICOS (en esta misma carpeta y en la raíz)
+• Icono de la aplicación 512×512: ../icon-512.png
+• Gráfico de funciones 1024×500: grafico-funciones-1024x500.png
+• Capturas del teléfono (1080×1920): captura-1-tareas.png … captura-4-calendario.png
