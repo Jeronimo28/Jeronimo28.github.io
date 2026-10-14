@@ -3,8 +3,10 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "PON_AQUI_EL_PAQUETE",
-      "sha256_cert_fingerprints": ["PON_AQUI_LA_HUELLA_SHA256_DE_GOOGLE_PLAY"]
+      "package_name": "io.github.jeronimo28.miagenda",
+      "sha256_cert_fingerprints": [
+        "74:C3:8F:53:37:1E:95:78:A6:7F:43:32:89:6A:60:B8:FD:E4:8A:21:49:80:48:FC:52:AF:D0:B5:FE:21:B7:89"
+      ]
     }
   }
 ]
