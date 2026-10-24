@@ -8,5 +8,15 @@
         "74:C3:8F:53:37:1E:95:78:A6:7F:43:32:89:6A:60:B8:FD:E4:8A:21:49:80:48:FC:52:AF:D0:B5:FE:21:B7:89"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.jeronimo28.mistareas",
+      "sha256_cert_fingerprints": [
+        "2F:13:54:63:9E:18:92:A5:F3:FF:7A:4E:A8:50:68:66:B3:BC:7A:35:60:6C:2A:92:1A:7D:6C:46:63:FD:38:36"
+      ]
+    }
   }
 ]
