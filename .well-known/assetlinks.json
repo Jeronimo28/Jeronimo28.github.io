@@ -15,7 +15,8 @@
       "namespace": "android_app",
       "package_name": "io.github.jeronimo28.mistareas",
       "sha256_cert_fingerprints": [
-        "2F:13:54:63:9E:18:92:A5:F3:FF:7A:4E:A8:50:68:66:B3:BC:7A:35:60:6C:2A:92:1A:7D:6C:46:63:FD:38:36"
+        "2F:13:54:63:9E:18:92:A5:F3:FF:7A:4E:A8:50:68:66:B3:BC:7A:35:60:6C:2A:92:1A:7D:6C:46:63:FD:38:36",
+        "C4:5E:07:71:C9:31:29:14:94:0B:7E:80:3B:F0:D8:96:D1:08:77:32:E3:8E:EF:11:25:DA:52:D8:2C:FA:BA:BA"
       ]
     }
   }
